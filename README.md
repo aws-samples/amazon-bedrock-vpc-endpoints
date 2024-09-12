@@ -137,7 +137,7 @@ Titan-Text = amazon.titan-text-express-v1
 
 Step 1: cd to project directory
 
-Step 2: Create Config file and name it config-original.properties.
+Step 2: Update the config file named config-original.properties with appropriate values.
 
 Sample Config File
 ```ini
