@@ -158,7 +158,7 @@ Please provide configuration file path including its name:  config-original.prop
 Please provide new configuration file path including its name:  config.properties
 {'UseVPCe': 'true', 'GetCredentialsFrom': '1', 'Region': 'us-west-2', 'AccessKey': 'xxxxx', 'SecretKey': 'xxxxx', 'AssumeRoleARN': 'Z0FBQUFBQmxHU2txQUVpUjNaazAwZ0dDTjV3QTB5ZEtEaDFEQTFveU52NEl4VkhaTmhOVkl1bHZMhkhfuiwcei2u3yi2FkWWVmS2huSmRCMHV3ZXJ1ckhvZkFpN3JXdUJmUWV2VUcwUUxUQ1Z3WkNBPT0=', 'VPCEndpointURL': 'Z0FBQUFBQmxHU2txRllEOW1xNDRVN1h5bDNkdhfskjhfdskhfdkXcW5CbVU4M0xROWl3Z05hMlpjd1pRWUpQdkRBTlIyLTNKRnpWY2RtYWNBdU9uOE5wT296Smc2Vk5fdFh2dE5pbHJodGZ3MW9hMWttcVlKUnVOWHM5elhxWC1QaU9xSElUcFBPOU1CMENu', 'PromptFilePath': 'prompt.txt', 'ModelID': 'anthropic.claude-v2', 'Debug': 'true', 'SecretKeyFernet': 'xxxxx='}
 ```
-Step 4: Delete the original config-original.properties file. 
+Step 4: Delete the original config-original.properties file. (optional)
 
 Step 5: Run following command to invoke bedrock model.
 ```text
