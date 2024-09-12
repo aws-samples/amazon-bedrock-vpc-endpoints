@@ -166,7 +166,7 @@ python3 invoke.py
 ```
 
 
-Sample invoke - Refer to completion in the section below. User is prompted specify the location of configuration file and choice of model. For visibility and context, the tool lists the complete prompt sent to model (combining System prompt, prompt body, user input) and further generates the response from the model.
+Sample invoke - Refer to completion in the section below. User is prompted specify the location of configuration file and choice of model. For visibility and context, the tool lists the complete prompt sent to model (combining System prompt 'system.txt', prompt body 'prompt.txt', user input 'user-query.txt') and further generates the response from the model.
 ```text
 python3 invoke.py
 Please provide configuration file path including its name (if no path is provided it will look for config.properties in the same folder as main.py):  
