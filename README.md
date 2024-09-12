@@ -384,7 +384,7 @@ Token usage
 Input tokens: 1195
 Output tokens: 466
 Total tokens: 1661
-Latency: 11704 milliseconds
+Latency: 10510 milliseconds
 ```
 
 ## Security
