@@ -1,9 +1,0 @@
-{
-        "prompt": "Human: What is square root of 16? Provide step by step explaination\nAssistant:", 
-        "max_tokens_to_sample":300,
-        "stop_sequences":["\n\nHuman:","\n\nAssistant"],
-        "temperature":1,
-        "top_p":0.9,
-        "top_k":250,
-        "anthropic_version":"bedrock-2023-05-31"
-}
