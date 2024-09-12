@@ -165,27 +165,226 @@ Step 5: Run following command to invoke bedrock model.
 python3 invoke.py
 ```
 Sample prompt - prompt.txt
-```json
+```text
+Your goal is to provide expert guidance to help the junior engineer efficiently resolve the production issue and learn nginx troubleshooting best practices.
+
+Here are a few examples of nginx error log entries and the expected troubleshooting responses in JSON format:
+
+<example1>
+2023/05/21 14:32:10 [error] 12345#12345: *1234567 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.100, server: example.com, request: "GET /api/data HTTP/1.1", upstream: "http://192.168.1.200:8080/api/data", host: "example.com"
+
 {
-        "prompt": "Human: What is square root of 16? Provide step by step explaination\nAssistant:", 
-        "max_tokens_to_sample":300,
-        "stop_sequences":["\n\nHuman:","\n\nAssistant"],
-        "temperature":1,
-        "top_p":0.9,
-        "top_k":250,
-        "anthropic_version":"bedrock-2023-05-31"
+  "issue": "Connection refused error while connecting to upstream server",
+  "causes": [
+    "The upstream server at 192.168.1.200:8080 may be down or not responding",
+    "There could be a firewall blocking the connection to the upstream server",
+    "The upstream server may not be configured to listen on the specified port 8080"
+  ],
+  "impact": "Requests to the /api/data endpoint are failing, which could impact any features or services dependent on this API",
+  "troubleshooting": [
+    "Check if the upstream server at 192.168.1.200:8080 is running and responsive",
+    "Verify that there are no firewall rules blocking the connection from the nginx server to the upstream server",
+    "Ensure that the upstream server is configured to listen on port 8080"
+  ],
+  "prevention": [
+    "Implement proper monitoring and alerting for the upstream server to quickly detect and resolve outages",
+    "Regularly review and update firewall rules to ensure necessary connections are allowed",
+    "Double-check the upstream server configuration whenever changes are made"
+  ]
 }
+</example1>
+
+<example2>
+2023/05/21 15:45:30 [error] 12345#12345: *7654321 open() "/var/www/example.com/nonexistent.html" failed (2: No such file or directory), client: 192.168.1.101, server: example.com, request: "GET /nonexistent.html HTTP/1.1", host: "example.com"
+
+{
+  "issue": "File not found error for requested resource",
+  "causes": [
+    "The requested file /var/www/example.com/nonexistent.html does not exist on the server",
+    "There could be a broken link or incorrect URL pointing to this non-existent resource"
+  ],
+  "impact": "Users are encountering 404 Not Found errors when trying to access the specified resource, leading to a poor user experience",
+  "troubleshooting": [
+    "Check if the file path is correct and the file exists on the server",
+    "Search the codebase and database for any references to the incorrect URL and update them",
+    "Consider implementing custom 404 error pages to provide a better user experience"
+  ], 
+  "prevention": [
+    "Regularly audit the website for broken links and missing resources",
+    "Implement automated tests to check for 404 errors",
+    "Use version control and code reviews to catch and prevent incorrect URL references"
+  ]
+}
+</example2>
+
+
+Please analyze the following nginx error log entry and provide troubleshooting guidance:
+
+{{log_entry}}
 ```
 
 Sample invoke - Refer to completion in the section below. This is the response from the model.
 ```text
 python3 invoke.py
-lplAg7xROZfCc1XRtPLweIudCXn1hHKwhCCuvqKM178=
-Please provide configuration file path including its name (if no path it provided it will look for config.properties in the same folder as invoke.py):  config.properties
------------------------
-{'completion': " Okay, here are the step-by-step workings to find the square root of 16:\n1) 16 is a perfect square number, meaning it can be expressed as the square of an integer.\n2) To find the square root, we need to find the integer that when multiplied by itself gives 16. \n3) Let's think through the possible integers:\n1 x 1 = 1 \n2 x 2 = 4\n3 x 3 = 9  \n4 x 4 = 16\n4) Since 4 x 4 equals 16, the square root of 16 is 4.\n\nIn summary, to find the square root of a number:\n- Determine if it is a perfect square \n- Find the integer that when squared gives the original number\n- The square root is that integer\n\nSo the square root of 16 is 4.", 'stop_reason': 'stop_sequence'}
-Model Execution Time in Seconds:  5
-=================
+Please provide configuration file path including its name (if no path is provided it will look for config.properties in the same folder as main.py):  
+
+Note:
+Bedrock VPCE is not enabled. Using the Bedrock Service URL - https://bedrock-runtime.us-west-2.amazonaws.com
+
+Available Models: ItemsView(<Section: models>)
+0: Claude-35-Sonnet
+1: Claude-3-Opus
+2: Claude-3-Sonnet
+3: Claude-3-Haiku
+4: Claude-21
+5: Llama-31-70b-Instruct
+6: Llama-31-8b-Instruct
+7: Llama-3-8b-Instruct
+8: Mistral-Large-2
+9: Mistral-7b-Instruct
+10: Mixtral-8x7b-Instruct
+11: Titan-Text-Lite
+12: Titan-Text
+Select the model by entering the number: 0
+
+
+Model Selected: anthropic.claude-3-5-sonnet-20240620-v1:0
+
+
+GetCredentialsFrom value is 0
+=============================
+Complete Prompt Context 
+
+
+You are an expert SRE (Site Reliability Engineer) who helps other engineers troubleshoot production issues by analyzing logs. An engineer has come to you for help with an issue they are seeing in production. You have been asked to assist a junior engineer in diagnosing and resolving an issue based on an nginx error log entry they have provided.
+
+When the junior engineer provides an error log entry, carefully analyze it to identify the specific issue or error. Explain in detail the likely causes of the issue and the potential impact to the production environment. Provide clear, step-by-step recommendations for troubleshooting and resolving the problem. Also include any preventive measures or best practices that could help avoid similar issues in the future.
+
+Respond using the following JSON format:
+<format>
+{
+  "issue": "Brief description of the identified issue or error",
+  "causes": [
+    "Potential cause 1",
+    "Potential cause 2",
+    "..."
+  ],
+  "impact": "Explanation of how the issue may impact the production environment",
+  "troubleshooting": [
+    "Step 1",
+    "Step 2",
+    "..."
+  ],
+  "prevention": [
+    "Preventive measure or best practice 1",
+    "Preventive measure or best practice 2",
+    "..."  
+  ]
+}
+</format>
+
+
+Your goal is to provide expert guidance to help the junior engineer efficiently resolve the production issue and learn nginx troubleshooting best practices.
+
+Here are a few examples of nginx error log entries and the expected troubleshooting responses in JSON format:
+
+<example1>
+2023/05/21 14:32:10 [error] 12345#12345: *1234567 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.100, server: example.com, request: "GET /api/data HTTP/1.1", upstream: "http://192.168.1.200:8080/api/data", host: "example.com"
+
+{
+  "issue": "Connection refused error while connecting to upstream server",
+  "causes": [
+    "The upstream server at 192.168.1.200:8080 may be down or not responding",
+    "There could be a firewall blocking the connection to the upstream server",
+    "The upstream server may not be configured to listen on the specified port 8080"
+  ],
+  "impact": "Requests to the /api/data endpoint are failing, which could impact any features or services dependent on this API",
+  "troubleshooting": [
+    "Check if the upstream server at 192.168.1.200:8080 is running and responsive",
+    "Verify that there are no firewall rules blocking the connection from the nginx server to the upstream server",
+    "Ensure that the upstream server is configured to listen on port 8080"
+  ],
+  "prevention": [
+    "Implement proper monitoring and alerting for the upstream server to quickly detect and resolve outages",
+    "Regularly review and update firewall rules to ensure necessary connections are allowed",
+    "Double-check the upstream server configuration whenever changes are made"
+  ]
+}
+</example1>
+
+<example2>
+2023/05/21 15:45:30 [error] 12345#12345: *7654321 open() "/var/www/example.com/nonexistent.html" failed (2: No such file or directory), client: 192.168.1.101, server: example.com, request: "GET /nonexistent.html HTTP/1.1", host: "example.com"
+
+{
+  "issue": "File not found error for requested resource",
+  "causes": [
+    "The requested file /var/www/example.com/nonexistent.html does not exist on the server",
+    "There could be a broken link or incorrect URL pointing to this non-existent resource"
+  ],
+  "impact": "Users are encountering 404 Not Found errors when trying to access the specified resource, leading to a poor user experience",
+  "troubleshooting": [
+    "Check if the file path is correct and the file exists on the server",
+    "Search the codebase and database for any references to the incorrect URL and update them",
+    "Consider implementing custom 404 error pages to provide a better user experience"
+  ], 
+  "prevention": [
+    "Regularly audit the website for broken links and missing resources",
+    "Implement automated tests to check for 404 errors",
+    "Use version control and code reviews to catch and prevent incorrect URL references"
+  ]
+}
+</example2>
+
+
+Please analyze the following nginx error log entry and provide troubleshooting guidance:
+
+2023/05/21 18:15:45 [crit] 12345#12345: *5432109 SSL_do_handshake() failed (SSL: error:14094438:SSL routines:ssl3_read_bytes:tlsv1 alert internal error) while SSL handshaking, client: 192.168.1.102, server: 0.0.0.0:443
+
+
+=============================
+RESULT: 
+
+
+Role: assistant
+Here's the analysis and troubleshooting guidance for the provided nginx error log entry:
+
+{
+  "issue": "SSL handshake failure due to TLSv1 alert internal error",
+  "causes": [
+    "Mismatch between the SSL/TLS versions supported by the client and server",
+    "Incorrect or corrupted SSL certificate configuration on the server",
+    "Incompatible cipher suites between client and server",
+    "Potential issues with the client's SSL/TLS implementation"
+  ],
+  "impact": "Users are unable to establish secure HTTPS connections to the server, potentially affecting all SSL/TLS traffic and compromising the security of the service",
+  "troubleshooting": [
+    "Check the SSL/TLS protocol versions enabled on the nginx server and ensure they match the client's capabilities",
+    "Verify the SSL certificate configuration in the nginx server, including the certificate chain and private key",
+    "Review the cipher suites enabled on the server and ensure they are compatible with modern clients",
+    "Examine the nginx SSL configuration for any misconfigurations or syntax errors",
+    "Use OpenSSL's s_client tool to test the SSL handshake and identify specific issues",
+    "Check the nginx error logs for any additional context or related errors",
+    "If possible, gather information about the client's SSL/TLS implementation and version"
+  ],
+  "prevention": [
+    "Regularly update nginx and OpenSSL to the latest stable versions to ensure support for modern SSL/TLS protocols and security fixes",
+    "Implement automated monitoring for SSL/TLS configuration and certificate expiration",
+    "Use tools like SSL Labs Server Test to regularly assess the SSL/TLS configuration",
+    "Follow industry best practices for SSL/TLS configuration, such as disabling older, insecure protocols and using strong cipher suites",
+    "Implement proper logging and alerting for SSL/TLS-related errors to catch issues early",
+    "Conduct periodic security audits of the SSL/TLS configuration"
+  ]
+}
+
+Stop reason: end_turn
+=====================
+
+Token usage
+
+Input tokens: 1195
+Output tokens: 466
+Total tokens: 1661
+Latency: 11704 milliseconds
 ```
 
 ## Security
