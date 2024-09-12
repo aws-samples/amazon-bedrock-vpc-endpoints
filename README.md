@@ -1,7 +1,5 @@
 ## Ensure Cross Account Private Connectivity via VPC Endpoints for Amazon Bedrock
 
-# Amazon Bedrock Access Patterns
-
 Amazon Bedrock is a fully managed service that offers a choice of high-performing foundation models (FMs) from leading AI companies like AI21 Labs, Anthropic, Cohere, Meta, Stability AI, and Amazon via a single API. It also provides broad set of capabilities you need to build generative AI applications, simplifying development while maintaining privacy and security. Since Amazon Bedrock is serverless, you don't have to manage any infrastructure, and you can securely integrate and deploy generative AI capabilities into your applications using the AWS services you are already familiar with.
 
 As of September, 28 2023 AWS Bedrock is Generally Available [Press Release: https://www.aboutamazon.com/news/aws/aws-amazon-bedrock-general-availability-generative-ai-innovations]
@@ -13,7 +11,7 @@ This workshop detail mechanisms customers can use to consume AWS Bedrock service
 
 ![Bedrock Architecture](./images/bedrock-vpce.jpg)
 
-# Workshop Overview
+## Workshop Overview
 This workshop provides hands-on experience and Python code snippets to consume Foundational Models available in AWS Bedrock. "prompt.txt" file contains necessary model configurations to invoke FMs in Amazon Bedrock. Below is one such sample for Anthropic Claude V2 Model invocation.
 
 ```JSON
@@ -40,7 +38,7 @@ Visit the Amazon Bedrock Service page and follow the numbered sequence shown in 
   
 </details>
 
-# Prerequisites
+## Prerequisites
 
 1. Ensure Foundational Models are enabled in Amazon Bedrock
 
