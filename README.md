@@ -71,8 +71,18 @@ Visit the Amazon Bedrock Service page and follow the numbered sequence shown in 
 > [!NOTE]
 > If your dev environment is in PrivateSubnet make sure to have NAT setup appropriately to access Bedrock Service when not using VPC Endpoints [Refer: https://docs.aws.amazon.com/appstream2/latest/developerguide/managing-network-internet-NAT-gateway.html]
 
+## Python Prerequisites
 
-# Executing Workshop
+Please ensure you have below libraries installed for tool to work successfully
+
+```text
+pip install cryptography
+pip install boto3
+pip install botocore
+pip install pytz
+```
+
+## Executing Workshop
 
 Download contents of the workshop in your Cloud9 development environment. Prior to executing the .py files, lets analyze the configuration files that drive various integrations to AWS Bedrock. 
 
