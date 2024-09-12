@@ -73,7 +73,7 @@ Visit the Amazon Bedrock Service page and follow the numbered sequence shown in 
 
 ## Python Prerequisites
 
-Please ensure you have below libraries installed for tool to work successfully
+Please ensure you have below libraries installed for tool to work successfully in your development environment
 
 ```text
 pip install cryptography
