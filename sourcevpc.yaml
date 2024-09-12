@@ -1,0 +1,462 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Environment Parameters
+        Parameters: 
+            - EnvironmentName
+      - Label:
+          default: Source VPC Parameters
+        Parameters:      
+            - SourceVPCID
+            - SourcePrivateSubnet1CIDR
+            - SourcePrivateSubnet2CIDR
+            - SourcePrivateSubnet3CIDR
+            - SourcePublicSubnet1CIDR
+            - SourcePublicSubnet2CIDR
+            - SourcePublicSubnet3CIDR
+            - PeerDestinationAccountId
+         
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: "SourceBedrock-GenAI-VPCEndpointProject"
+  
+  #########################
+  #
+  # Source VPC Parameters - VPC that will be peered to the Source VPC
+  # 3 public subnets created in the Source VPC
+  # 3 private subnets created in the Source VPC
+  #
+  #########################  
+  
+  SourceVPCID:
+    Type: String
+    Default: 10.3.0.0/16
+  SourcePrivateSubnet1CIDR:
+    Description: Please enter the IP range (CIDR notation) for the private subnet in the first Availability Zone for the Source VPC
+    Type: String
+    Default: 10.3.1.0/24
+  SourcePrivateSubnet2CIDR:
+    Description: Please enter the IP range (CIDR notation) for the private subnet in the second Availability Zone for the Source VPC
+    Type: String
+    Default: 10.3.2.0/24
+  SourcePrivateSubnet3CIDR:
+    Description: Please enter the IP range (CIDR notation) for the private subnet in the third Availability Zone for the Source VPC
+    Type: String
+    Default: 10.3.3.0/24
+  SourcePublicSubnet1CIDR:
+    Description: Please enter the IP range (CIDR notation) for the public subnet in the first Availability Zone for the Source VPC
+    Type: String
+    Default: 10.3.4.0/24
+  SourcePublicSubnet2CIDR:
+    Description: Please enter the IP range (CIDR notation) for the public subnet in the second Availability Zone for the Source VPC
+    Type: String
+    Default: 10.3.5.0/24
+  SourcePublicSubnet3CIDR:
+    Description: Please enter the IP range (CIDR notation) for the public subnet in the second Availability Zone for the Source VPC
+    Type: String
+    Default: 10.3.6.0/24
+  # PeerDestinationAccountId required
+  PeerDestinationAccountId:
+    Type: String
+    AllowedPattern: "\\d{12}"
+    #ConstraintDescription: Must be 12 digits
+    Description: Account ID of the destination account to which you are peering
+# Source VPC Instance parameters to test and valid Bedrock endpoint from cross-account
+  InstanceType:
+    Description: EC2 instance specs configuration
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+      - t2.micro
+      - t2.small
+      - t2.medium
+Mappings:
+  AMIs:
+    us-east-1:
+      Name: ami-03a6eaae9938c858c  #  AMI ID for us-east-1
+    #us-east-2:
+      #Name: ami-0d406e26e5ad4de53  #  AMI ID for us-east-2
+    #us-west-2:
+      #Name: ami-0b2b4f610e654d9ac  #  AMI ID for us-west-2
+Resources: 
+
+  #########################
+  #
+  # Source VPC Resources - VPC that will be peered to the Source VPC
+  # 3 private subnets created in the Source VPC
+  # 3 public subnets created in the Source VPC
+  # 3 NAT Gateways created in the Source VPC public subnets
+  #
+  ######################### 
+  SourceVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref SourceVPCID
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Ref EnvironmentName
+
+  peerRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Principal:
+              AWS: !Ref PeerDestinationAccountId
+            Action:
+              - 'sts:AssumeRole'
+            Effect: Allow
+      Path: /
+      Policies:
+        - PolicyName: AcceptVpcPeeringConnVpc
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: 'ec2:AcceptVpcPeeringConnection'
+                Resource: '*'
+
+  SourceInternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Ref EnvironmentName
+
+  SourceInternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref SourceInternetGateway
+      VpcId: !Ref SourceVPC
+  
+  SourcePublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref SourceVPC
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: !Ref SourcePublicSubnet1CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Public Subnet (AZ1)
+  SourcePublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref SourceVPC
+      AvailabilityZone: !Select [ 1, !GetAZs  '' ]
+      CidrBlock: !Ref SourcePublicSubnet2CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Public Subnet (AZ2)
+  SourcePublicSubnet3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref SourceVPC
+      AvailabilityZone: !Select [ 1, !GetAZs  '' ]
+      CidrBlock: !Ref SourcePublicSubnet3CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Public Subnet (AZ3)
+  SourcePrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref SourceVPC
+      AvailabilityZone: !Select [ 0, !GetAZs  '' ]
+      CidrBlock: !Ref SourcePrivateSubnet1CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Private Subnet (AZ1)
+  SourcePrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref SourceVPC
+      AvailabilityZone: !Select [ 1, !GetAZs  '' ]
+      CidrBlock: !Ref SourcePrivateSubnet2CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Private Subnet (AZ2)
+  SourcePrivateSubnet3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref SourceVPC
+      AvailabilityZone: !Select [ 1, !GetAZs  '' ]
+      CidrBlock: !Ref SourcePrivateSubnet3CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Private Subnet (AZ3) 
+  
+  SourceNatGateway1EIP:
+    Type: AWS::EC2::EIP
+    DependsOn: SourceInternetGatewayAttachment
+    Properties:
+      Domain: vpc
+
+  SourceNatGateway2EIP:
+    Type: AWS::EC2::EIP
+    DependsOn: SourceInternetGatewayAttachment
+    Properties:
+      Domain: vpc  
+  
+  SourceNatGateway3EIP:
+    Type: AWS::EC2::EIP
+    DependsOn: SourceInternetGatewayAttachment
+    Properties:
+      Domain: vpc  
+  
+  SourceNatGateway1:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt SourceNatGateway1EIP.AllocationId
+      SubnetId: !Ref SourcePublicSubnet1
+  
+  SourceNatGateway2:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt SourceNatGateway2EIP.AllocationId
+      SubnetId: !Ref SourcePublicSubnet2  
+  
+  SourceNatGateway3:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt SourceNatGateway3EIP.AllocationId
+      SubnetId: !Ref SourcePublicSubnet3 
+
+  SourcePublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref SourceVPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Public Routes
+
+  SourceDefaultPublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: SourceInternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref SourcePublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref SourceInternetGateway
+
+  SourcePublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref SourcePublicRouteTable
+      SubnetId: !Ref SourcePublicSubnet1
+
+  SourcePublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref SourcePublicRouteTable
+      SubnetId: !Ref SourcePublicSubnet2
+  SourcePublicSubnet3RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref SourcePublicRouteTable
+      SubnetId: !Ref SourcePublicSubnet3
+  SourcePrivateRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref SourceVPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Private Routes (AZ1)
+
+  SourceDefaultPrivateRoute1:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref SourcePrivateRouteTable1
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref SourceNatGateway1
+
+  SourcePrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref SourcePrivateRouteTable1
+      SubnetId: !Ref SourcePrivateSubnet1
+
+  SourcePrivateRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref SourceVPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Private Routes (AZ2)
+
+  SourceDefaultPrivateRoute2:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref SourcePrivateRouteTable2
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref SourceNatGateway2
+
+  SourcePrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref SourcePrivateRouteTable2
+      SubnetId: !Ref SourcePrivateSubnet2
+  
+  SourcePrivateRouteTable3:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref SourceVPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Private Routes (AZ3)
+
+  SourceDefaultPrivateRoute3:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref SourcePrivateRouteTable3
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref SourceNatGateway3
+
+  SourcePrivateSubnet3RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref SourcePrivateRouteTable3
+      SubnetId: !Ref SourcePrivateSubnet3
+  SourceNoIngressSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: "no-ingress-sg"
+      GroupDescription: "Security group with no ingress rule"
+      VpcId: !Ref SourceVPC
+  #creating an EC2 instance with SSM role for EC2 to connect using SSM Session Manager
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      IamInstanceProfile: !Ref SSMInstanceProfile
+      ImageId:
+        Fn::FindInMap:
+          - AMIs
+          - Ref: AWS::Region
+          - Name
+      SubnetId: !Ref SourcePrivateSubnet1
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y 
+          yum install Python3
+          yum install pip -y
+          pip install boto3 botocore
+          pip install cryptography
+          yum install git -y
+      Tags:
+        - Key: Name
+          Value: Sourcevpceinstance
+  SSMInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties: 
+      InstanceProfileName: SSM-ec2-instance-profile
+      Path: "/"
+      Roles: 
+       - !Ref SSMRoleforEC2Role
+  SSMRoleforEC2Role: 
+    Type: AWS::IAM::Role
+    Properties: 
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+          - 
+            Effect: "Allow"
+            Principal: 
+              Service: 
+                - "ec2.amazonaws.com"
+            Action: 
+              - "sts:AssumeRole"
+      Path: "/"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+        - "arn:aws:iam::aws:policy/AmazonBedrockFullAccess"
+      #adding inline sts assume policy
+      Policies:
+        - 
+          PolicyName: "assumeroleforbedrockfromdestinationaccount"
+          PolicyDocument: 
+            Version: "2012-10-17"
+            Statement: 
+              - 
+                Effect: "Allow"
+                Action: 
+                  - "sts:AssumeRole"
+                Resource: !Sub "arn:aws:iam::${PeerDestinationAccountId}:role/AmazonBedrockFullAccess"
+Outputs:
+  SourceVPCId:
+    Description: A reference to the Source VPC
+    Value: !Ref SourceVPC
+
+  SourceVPCDefaultSecurityGroup:
+    Description: A reference to the default security group of the Source VPC
+    Value: !GetAtt SourceVPC.DefaultSecurityGroup
+  
+  PeerRoleARN:
+    Value:
+      'Fn::GetAtt':
+        - peerRole
+        - Arn
+
+  # EC2 instance Id with private IP address 
+  InstanceId:
+    Value: !Ref EC2Instance
+    Description: "EC2 instance"
+  
+  SourceVPCAccountId:
+    Description: A reference to the owner of the Source VPC
+    Value: !Sub '${AWS::AccountId}'
+  
+  SourceVPCCidrBlock:
+    Description: A reference to the CIDR block of the Source VPC
+    Value: !GetAtt SourceVPC.CidrBlock
+
+  SourcePrivateSubnet1:
+    Description: A reference to the private subnet in the 1st Availability Zone
+    Value: !Ref SourcePrivateSubnet1
+
+  SourcePrivateRouteTable1:
+    Description: A reference to the private Route Table for the SourcePrivateSubnet1
+    Value: !Ref SourceDefaultPrivateRoute1 
+
+
+  SourcePrivateSubnet2:
+    Description: A reference to the private subnet in the 2nd Availability Zone
+    Value: !Ref SourcePrivateSubnet2
+  
+  SourcePrivateRouteTable2:
+    Description: A reference to the private Route Table for the SourcePrivateSubnet2
+    Value: !Ref SourceDefaultPrivateRoute2
+  
+  SourcePrivateSubnet3:
+    Description: A reference to the private subnet in the 3rd Availability Zone
+    Value: !Ref SourcePrivateSubnet3
+  
+  SourcePrivateRouteTable3:
+    Description: A reference to the private Route Table for the SourcePrivateSubnet1
+    Value: !Ref SourceDefaultPrivateRoute3
+  
+  SourceNoIngressSecurityGroup:
+    Description: Security group with no ingress rule
+    Value: !Ref SourceNoIngressSecurityGroup
+  
+  
+  
+  
+
+
+  
+
+
+
+
+

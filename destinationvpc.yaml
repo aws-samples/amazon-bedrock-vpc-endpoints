@@ -1,0 +1,403 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Environment Parameters
+        Parameters: 
+            - EnvironmentName
+      - Label:
+          default: Destination VPC Parameters
+        Parameters:      
+            - DestinationVPCID
+            - DestinationPrivateSubnet1CIDR
+            - DestinationPrivateSubnet2CIDR
+            - DestinationPrivateSubnet3CIDR
+            - DestinationPublicSubnet1CIDR
+            - DestinationPublicSubnet2CIDR
+            - DestinationPublicSubnet3CIDR
+            - SourceVPCAccountId
+            - SourceVPCId
+            - PeerRoleArn
+         
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: "DestinationBedrock-GenAI-VPCEndpointProject"
+  
+  #########################
+  #
+  # Destination VPC Parameters - VPC that will be peered to the destination VPC
+  # 3 public subnets created in the Destination VPC
+  # 3 private subnets created in the Destination VPC
+  #
+  #########################  
+  
+  DestinationVPCID:
+    Type: String
+    Default: 10.4.0.0/16
+  DestinationPrivateSubnet1CIDR:
+    Description: Please enter the IP range (CIDR notation) for the private subnet in the first Availability Zone for the destination VPC
+    Type: String
+    Default: 10.4.1.0/24
+  DestinationPrivateSubnet2CIDR:
+    Description: Please enter the IP range (CIDR notation) for the private subnet in the second Availability Zone for the destination VPC
+    Type: String
+    Default: 10.4.2.0/24
+  DestinationPrivateSubnet3CIDR:
+    Description: Please enter the IP range (CIDR notation) for the private subnet in the third Availability Zone for the destination VPC
+    Type: String
+    Default: 10.4.3.0/24
+  DestinationPublicSubnet1CIDR:
+    Description: Please enter the IP range (CIDR notation) for the public subnet in the first Availability Zone for the destination VPC
+    Type: String
+    Default: 10.4.4.0/24
+  DestinationPublicSubnet2CIDR:
+    Description: Please enter the IP range (CIDR notation) for the public subnet in the second Availability Zone for the destination VPC
+    Type: String
+    Default: 10.4.5.0/24
+  DestinationPublicSubnet3CIDR:
+    Description: Please enter the IP range (CIDR notation) for the public subnet in the second Availability Zone for the destination VPC
+    Type: String
+    Default: 10.4.6.0/24
+  SourceVPCAccountId:
+    Type: String
+    AllowedPattern: "\\d{12}"
+    #ConstraintDescription: Must be 12 digits
+    Description: Enter the AWS Account ID of the source VPC (vpc-xxx) that will be peered with the destination VPC
+  SourceVPCId:
+    Type: String
+    AllowedPattern: "vpc-[a-f0-9]{8,17}$"
+    ConstraintDescription: Must be a valid VPC ID starting with 'vpc-' 
+    Description: Enter the VPC ID of the source VPC (vpc-xxx)that will be peered with the destination VPC
+  PeerRoleArn:
+    Type: String
+    AllowedPattern: "arn:aws:iam::[0-9]{12}:role/[a-zA-Z_0-9+=,.@-]{1,64}"
+    ConstraintDescription: Must be a valid IAM role ARN.
+    Description: Enter the ARN of the cross-account role allowing the local VPC to access the peer VPC
+Resources: 
+
+  #########################
+  #
+  # Destination VPC Resources - VPC that will be peered to the destination VPC
+  # 3 private subnets created in the destination VPC
+  # 3 public subnets created in the destination VPC
+  # 3 NAT Gateways created in the destination VPC public subnets
+  #
+  ######################### 
+  DestinationVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref DestinationVPCID
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Ref EnvironmentName
+  vpcPeeringConnection:
+    Type: 'AWS::EC2::VPCPeeringConnection'
+    Properties:
+      VpcId: !Ref DestinationVPC
+      PeerVpcId: !Ref SourceVPCId
+      PeerOwnerId: !Ref SourceVPCAccountId
+      PeerRoleArn: !Ref PeerRoleArn
+  
+  DestinationInternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Ref EnvironmentName
+
+  DestinationInternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref DestinationInternetGateway
+      VpcId: !Ref DestinationVPC
+  
+  DestinationPublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref DestinationVPC
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: !Ref DestinationPublicSubnet1CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Public Subnet (AZ1)
+  DestinationPublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref DestinationVPC
+      AvailabilityZone: !Select [ 1, !GetAZs  '' ]
+      CidrBlock: !Ref DestinationPublicSubnet2CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Public Subnet (AZ2)
+  DestinationPublicSubnet3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref DestinationVPC
+      AvailabilityZone: !Select [ 1, !GetAZs  '' ]
+      CidrBlock: !Ref DestinationPublicSubnet3CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Public Subnet (AZ3)
+  DestinationPrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref DestinationVPC
+      AvailabilityZone: !Select [ 0, !GetAZs  '' ]
+      CidrBlock: !Ref DestinationPrivateSubnet1CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Private Subnet (AZ1)
+  DestinationPrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref DestinationVPC
+      AvailabilityZone: !Select [ 1, !GetAZs  '' ]
+      CidrBlock: !Ref DestinationPrivateSubnet2CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Private Subnet (AZ2)
+  DestinationPrivateSubnet3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref DestinationVPC
+      AvailabilityZone: !Select [ 1, !GetAZs  '' ]
+      CidrBlock: !Ref DestinationPrivateSubnet3CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Private Subnet (AZ3) 
+  
+  DestinationNatGateway1EIP:
+    Type: AWS::EC2::EIP
+    DependsOn: DestinationInternetGatewayAttachment
+    Properties:
+      Domain: vpc
+
+  DestinationNatGateway2EIP:
+    Type: AWS::EC2::EIP
+    DependsOn: DestinationInternetGatewayAttachment
+    Properties:
+      Domain: vpc  
+  
+  DestinationNatGateway3EIP:
+    Type: AWS::EC2::EIP
+    DependsOn: DestinationInternetGatewayAttachment
+    Properties:
+      Domain: vpc  
+  
+  DestinationNatGateway1:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt DestinationNatGateway1EIP.AllocationId
+      SubnetId: !Ref DestinationPublicSubnet1
+  
+  DestinationNatGateway2:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt DestinationNatGateway2EIP.AllocationId
+      SubnetId: !Ref DestinationPublicSubnet2  
+  
+  DestinationNatGateway3:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt DestinationNatGateway3EIP.AllocationId
+      SubnetId: !Ref DestinationPublicSubnet3 
+
+  DestinationPublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref DestinationVPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Public Routes
+
+  DestinationDefaultPublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: DestinationInternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref DestinationPublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref DestinationInternetGateway
+
+  DestinationPublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref DestinationPublicRouteTable
+      SubnetId: !Ref DestinationPublicSubnet1
+
+  DestinationPublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref DestinationPublicRouteTable
+      SubnetId: !Ref DestinationPublicSubnet2
+  DestinationPublicSubnet3RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref DestinationPublicRouteTable
+      SubnetId: !Ref DestinationPublicSubnet3
+  DestinationPrivateRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref DestinationVPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Private Routes (AZ1)
+
+  DestinationDefaultPrivateRoute1:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref DestinationPrivateRouteTable1
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref DestinationNatGateway1
+
+  DestinationPrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref DestinationPrivateRouteTable1
+      SubnetId: !Ref DestinationPrivateSubnet1
+
+  DestinationPrivateRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref DestinationVPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Private Routes (AZ2)
+
+  DestinationDefaultPrivateRoute2:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref DestinationPrivateRouteTable2
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref DestinationNatGateway2
+
+  DestinationPrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref DestinationPrivateRouteTable2
+      SubnetId: !Ref DestinationPrivateSubnet2
+  
+  DestinationPrivateRouteTable3:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref DestinationVPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Private Routes (AZ3)
+
+  DestinationDefaultPrivateRoute3:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref DestinationPrivateRouteTable3
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref DestinationNatGateway3
+
+  DestinationPrivateSubnet3RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref DestinationPrivateRouteTable3
+      SubnetId: !Ref DestinationPrivateSubnet3
+
+  DestinationNoIngressSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: "no-ingress-sg"
+      GroupDescription: "Security group with no ingress rule"
+      VpcId: !Ref DestinationVPC
+  
+  #creating an IAM role using IAM managed policy AmazonBedrockFullAccess with the service bedrock
+  AmazonBedrockFullAccess:
+    Type: "AWS::IAM::Role"
+    Properties: 
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+          - Effect: "Allow"
+            Principal: 
+              Service: 
+                - "bedrock.amazonaws.com"
+              AWS:
+                - !Sub "arn:aws:iam::${SourceVPCAccountId}:root"
+            Action: 
+              - "sts:AssumeRole"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/AmazonBedrockFullAccess"
+      RoleName: "AmazonBedrockFullAccess"
+
+  # create a Bedrock VPC endpoint for the destination VPC
+  DestinationBedrockEndpoint:
+    Type: 'AWS::EC2::VPCEndpoint'
+    Properties:
+      VpcId: !Ref DestinationVPC
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.bedrock-runtime'
+      VpcEndpointType: Interface
+      PrivateDnsEnabled: true
+      SubnetIds:
+        - !Ref DestinationPrivateSubnet1 # Private subnet 1 DestinationPrivateSubnet1
+        #- !Ref DestinationPrivateSubnet2 # If needed, add private subnet 2 DestinationPrivateSubnet2
+        #- !Ref DestinationPrivateSubnet3 # If needed, add private subnet 3 DestinationPrivateSubnet3
+      SecurityGroupIds:
+        - !GetAtt DestinationVPC.DefaultSecurityGroup
+Outputs:
+  DestinationVPC:
+    Description: A reference to the Destination VPC
+    Value: !Ref DestinationVPC
+
+  VPCPeeringConnectionId:
+    Value: !Ref vpcPeeringConnection  
+
+  DestinationPrivateSubnet1:
+    Description: A reference to the private subnet in the 1st Availability Zone
+    Value: !Ref DestinationPrivateSubnet1
+  
+  DestinationPrivateRouteTable1:
+    Description: A reference to the private Route Table for the DestinationPrivateSubnet1
+    Value: !Ref DestinationDefaultPrivateRoute1
+
+  DestinationPrivateSubnet2:
+    Description: A reference to the private subnet in the 2nd Availability Zone
+    Value: !Ref DestinationPrivateSubnet2
+
+  DestinationPrivateRouteTable2:
+    Description: A reference to the private Route Table for the DestinationPrivateSubnet2
+    Value: !Ref DestinationDefaultPrivateRoute2 
+  
+  DestinationPrivateSubnet3:
+    Description: A reference to the private subnet in the 3rd Availability Zone
+    Value: !Ref DestinationPrivateSubnet3
+  
+  DestinationPrivateRouteTable3:
+    Description: A reference to the private Route Table for the DestinationPrivateSubnet3
+    Value: !Ref DestinationDefaultPrivateRoute3
+
+
+  DestinationNoIngressSecurityGroup:
+    Description: Security group with no ingress rule
+    Value: !Ref DestinationNoIngressSecurityGroup
+
+  BedrockVpcEndpointId:
+    Value: !Ref DestinationBedrockEndpoint
+    Description: "ID of the Amazon Bedrock-runtime VPC Endpoint"        
+
+  # Output the vpc default Security group 
+  DestinationVPCDefaultSecurityGroup:
+    Description: "VPC default Security group"
+    Value: !GetAtt DestinationVPC.DefaultSecurityGroup
+  
+  # Output the vpc cidr block
+  DestinationVPCCidrBlock:
+    Description: A reference to the CIDR block of the Destination VPC
+    Value: !GetAtt DestinationVPC.CidrBlock
+
+
+
