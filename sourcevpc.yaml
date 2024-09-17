@@ -352,6 +352,7 @@ Resources:
           yum install pip -y
           pip install boto3 botocore
           pip install cryptography
+          pip install pytz
           yum install git -y
       Tags:
         - Key: Name
