@@ -5,7 +5,6 @@ import json
 import boto3
 import datetime
 import bedrockclient as bd
-import pytz
 import logging
 import sys
 import botocore
