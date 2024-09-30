@@ -326,18 +326,17 @@ Resources:
     Properties:
       RouteTableId: !Ref SourcePrivateRouteTable3
       SubnetId: !Ref SourcePrivateSubnet3
-  SourceNoIngressSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupName: "no-ingress-sg"
-      GroupDescription: "Security group with no ingress rule"
-      VpcId: !Ref SourceVPC
   #creating an EC2 instance with SSM role for EC2 to connect using SSM Session Manager
   EC2Instance:
     Type: AWS::EC2::Instance
     Properties:
       InstanceType: !Ref InstanceType
       IamInstanceProfile: !Ref SSMInstanceProfile
+      BlockDeviceMappings:
+        - DeviceName: "/dev/xvda"
+          Ebs:
+            VolumeSize: 8  # Size of the EBS volume in GiB
+            Encrypted: true  # This ensures the volume is encrypted by default
       ImageId:
         Fn::FindInMap:
           - AMIs
@@ -445,18 +444,9 @@ Outputs:
     Description: A reference to the private Route Table for the SourcePrivateSubnet1
     Value: !Ref SourceDefaultPrivateRoute3
   
-  SourceNoIngressSecurityGroup:
-    Description: Security group with no ingress rule
-    Value: !Ref SourceNoIngressSecurityGroup
-  
   
   
   
 
 
   
-
-
-
-
-

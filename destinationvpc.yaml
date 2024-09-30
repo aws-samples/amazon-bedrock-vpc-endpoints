@@ -65,7 +65,7 @@ Parameters:
     Type: String
     AllowedPattern: "\\d{12}"
     #ConstraintDescription: Must be 12 digits
-    Description: Enter the AWS Account ID of the source VPC (vpc-xxx) that will be peered with the destination VPC
+    Description: Enter the AWS Account ID (012345678901) of the source VPC that will be peered with the destination VPC
   SourceVPCId:
     Type: String
     AllowedPattern: "vpc-[a-f0-9]{8,17}$"
@@ -307,13 +307,6 @@ Resources:
     Properties:
       RouteTableId: !Ref DestinationPrivateRouteTable3
       SubnetId: !Ref DestinationPrivateSubnet3
-
-  DestinationNoIngressSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupName: "no-ingress-sg"
-      GroupDescription: "Security group with no ingress rule"
-      VpcId: !Ref DestinationVPC
   
   #creating an IAM role using IAM managed policy AmazonBedrockFullAccess with the service bedrock
   AmazonBedrockFullAccess:
@@ -381,10 +374,6 @@ Outputs:
     Value: !Ref DestinationDefaultPrivateRoute3
 
 
-  DestinationNoIngressSecurityGroup:
-    Description: Security group with no ingress rule
-    Value: !Ref DestinationNoIngressSecurityGroup
-
   BedrockVpcEndpointId:
     Value: !Ref DestinationBedrockEndpoint
     Description: "ID of the Amazon Bedrock-runtime VPC Endpoint"        
@@ -398,6 +387,3 @@ Outputs:
   DestinationVPCCidrBlock:
     Description: A reference to the CIDR block of the Destination VPC
     Value: !GetAtt DestinationVPC.CidrBlock
-
-
-
