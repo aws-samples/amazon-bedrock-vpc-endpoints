@@ -5,7 +5,7 @@ Amazon Bedrock is a fully managed service that offers a choice of high-performin
 As of September, 28 2023 AWS Bedrock is Generally Available [Press Release: https://www.aboutamazon.com/news/aws/aws-amazon-bedrock-general-availability-generative-ai-innovations]
 
 This workshop detail mechanisms customers can use to consume AWS Bedrock service. Namely:
-1) Access Bedrock via Public Route throught NAT Gateway
+1) Access Bedrock via Public Route through NAT Gateway
 2) Enable secure access to Bedrock using VPC Endpoints (PrivateLink)
 3) Cross-Account access via AssumeRole
 
